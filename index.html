@@ -21,7 +21,7 @@
 
 <script>
   // ▼▼▼ PASTE YOUR FIREBASE DATABASE URL HERE ▼▼▼
-  const FIREBASE_URL = "https://csam-command-center-default-rtdb.firebaseio.com";
+  const FIREBASE_URL = "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com";
   // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 </script>
 
@@ -222,7 +222,7 @@ function HostView(){
                     </div>
                     <div style={{display:"flex",gap:5,flexShrink:0}}>
                       {!isActive&&<Btn onClick={()=>update({...gs,phase:"poll",activePoll:poll.id})} style={{background:"#00B4D8",color:NAV,fontSize:10,padding:"5px 9px"}}>Launch</Btn>}
-                      {isActive&&!isRevealed&&poll.correct&&<Btn onClick={()=>update({...gs,revealed:{...gs.revealed,[poll.id]:true}})} style={{background:"#F4A261",color:NAV,fontSize:10,padding:"5px 9px"}}>Reveal</Btn>}
+                      {isActive&&!isRevealed&&poll.correct&&<Btn onClick={()=>update({...gs,revealed:{...(gs.revealed||{}),[poll.id]:true}})} style={{background:"#F4A261",color:NAV,fontSize:10,padding:"5px 9px"}}>Reveal</Btn>}
                       {isActive&&<Btn onClick={()=>update({...gs,phase:"lobby",activePoll:null})} style={{background:"rgba(239,71,111,.3)",color:"#EF476F",fontSize:10,padding:"5px 9px"}}>End</Btn>}
                     </div>
                   </div>
@@ -297,8 +297,8 @@ function PlayerView(){
   useEffect(()=>{
     iv.current=setInterval(async()=>{
       const[g,players]=await Promise.all([db.get("gamestate"),db.get("players")]);
-      if(g)setGs(g);
-      if(nameRef.current&&players?.[nameRef.current])setMe(players[nameRef.current]);
+      if(g)setGs({...g,revealed:g.revealed||{}});
+      if(nameRef.current&&players?.[nameRef.current])setMe({...players[nameRef.current],answers:players[nameRef.current].answers||{}});
       if(!g||!nameRef.current)return;
       const s=screenRef.current;
       if(s==="waiting"&&g.phase==="poll")setScreen("poll");
@@ -326,6 +326,7 @@ function PlayerView(){
     const poll=POLLS.find(p=>p.id===pollId);
     const players=(await db.get("players"))||{};
     const me2=players[name]||{name,score:0,answers:{}};
+    if(!me2.answers)me2.answers={};
     if(me2.answers[pollId])return;
     const earned=poll.correct?(poll.correct===optId?poll.points:0):poll.points;
     me2.answers[pollId]=optId;me2.score=(me2.score||0)+earned;
